@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎬 Multiplex Cinema Booking | Multi-Queue (FIFO) & Analytics</title>
+  <!-- Google Fonts for modern typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Chart.js for Data Visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- ================= HEADER SECTION ================= -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="header-brand">
+          <div class="logo-icon">🎬</div>
+          <div class="title-group">
+            <h1>Multiplex Movie Ticket Booking</h1>
+            <p class="subtitle">Multi-Queue Ticket Reservation & Data Visualization System</p>
+          </div>
+        </div>
+        <div class="header-badges">
+          <span class="badge badge-python">Engine: <strong>Python 3 (data_structures.py)</strong></span>
+          <span class="badge badge-ds">Data Structure: <strong>Queue (FIFO) &amp; Priority Queue</strong></span>
+          <span class="badge badge-screens">Screens: <strong>4 Cinema Halls</strong></span>
+          <span class="badge badge-fifo">Principles: <strong>FIFO &amp; Priority-Based</strong></span>
+        </div>
+      </div>
+
+      <!-- MAIN NAVIGATION TABS: Booking vs Analytics -->
+      <nav class="nav-tabs-bar">
+        <button class="nav-tab-btn active" id="tabBookingView">
+          <span class="tab-icon">🎟️</span>
+          <span>Ticket Counter & Live Queue</span>
+        </button>
+        <button class="nav-tab-btn" id="tabAnalyticsView">
+          <span class="tab-icon">📊</span>
+          <span>Cinema Analytics & Visualizations</span>
+          <span class="tab-pill-badge" id="analyticsPillBadge">Live Charts</span>
+        </button>
+        <button class="nav-tab-btn" id="tabPriorityView">
+          <span class="tab-icon">⚡</span>
+          <span>Priority Booking</span>
+          <span class="tab-pill-badge pq-badge">Priority Queue</span>
+        </button>
+      </nav>
+    </header>
+
+    <!-- ================= VIEW 1: BOOKING & QUEUE DASHBOARD ================= -->
+    <div id="bookingViewContainer" class="view-panel active-panel">
+
+      <!-- 0. MOVIE SELECTOR BAR (Choose from 4 Movies) -->
+      <section class="movie-selector-section">
+        <div class="section-title-row">
+          <h3>🎞️ Select Movie (4 Cinema Screens)</h3>
+          <span class="helper-badge">Each movie operates its own independent FIFO Queue</span>
+        </div>
+        <div class="movie-cards-grid" id="movieSelectorGrid">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </section>
+
+      <!-- EDUCATIONAL CONCEPT BANNER -->
+      <section class="concept-banner">
+        <div class="concept-header" id="conceptToggleBtn">
+          <div class="concept-title">
+            <span class="info-bulb">💡</span>
+            <strong>Data Structure Theory & Viva Cheat Sheet:</strong> Multi-Queue FIFO Architecture
+          </div>
+          <button class="toggle-icon-btn" aria-label="Toggle concept details">▼</button>
+        </div>
+        <div class="concept-body" id="conceptBody">
+          <div class="concept-grid">
+            <div class="concept-card">
+              <div class="op-tag op-enqueue">ENQUEUE (push)</div>
+              <h4>Adds to the REAR</h4>
+              <p>Customer joins the back of this specific movie screen's queue.</p>
+              <code>screenQueue.push(customer)</code>
+            </div>
+            <div class="concept-card">
+              <div class="op-tag op-dequeue">DEQUEUE (shift)</div>
+              <h4>Removes from FRONT</h4>
+              <p>Customer at the front gets their ticket confirmed and seat booked.</p>
+              <code>screenQueue.shift()</code>
+            </div>
+            <div class="concept-card">
+              <div class="op-tag op-peek">PEEK (inspect)</div>
+              <h4>Views FRONT customer</h4>
+              <p>Inspects who is next in line without removing them from memory.</p>
+              <code>screenQueue[0]</code>
+            </div>
+            <div class="concept-card">
+              <div class="op-tag op-fifo">MULTI-QUEUE FIFO</div>
+              <h4>4 Parallel Screens</h4>
+              <p>Independent queues per screen prevent interference between movies.</p>
+              <code>movies[screenId].queue</code>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACTIVE MOVIE STATISTICS CARDS -->
+      <section class="stats-section">
+        <div class="stat-card">
+          <div class="stat-icon icon-queue">👥</div>
+          <div class="stat-meta">
+            <span class="stat-label">Customers in Queue</span>
+            <span class="stat-value" id="statQueueCount">4</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-next">🎯</div>
+          <div class="stat-meta">
+            <span class="stat-label">Next Customer (FRONT)</span>
+            <span class="stat-value highlight-text" id="statNextCustomer">Dishan</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-avail">💺</div>
+          <div class="stat-meta">
+            <span class="stat-label">Available Seats</span>
+            <span class="stat-value text-green" id="statAvailableSeats">18</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-booked">🎟️</div>
+          <div class="stat-meta">
+            <span class="stat-label">Booked Seats</span>
+            <span class="stat-value text-red" id="statBookedSeats">2</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- MAIN GRID: Left (Movie & Seats) vs Right (Live Queue & Controls) -->
+      <div class="dashboard-layout">
+
+        <!-- LEFT COLUMN: Active Movie Info, Seat Grid & Booking Form -->
+        <aside class="left-column">
+
+          <!-- 2. MOVIE INFORMATION CARD (DYNAMIC) -->
+          <section class="card movie-card" id="activeMovieCard">
+            <div class="movie-card-header">
+              <span class="section-tag" id="movieBadgeTag">NOW SHOWING</span>
+              <span class="screen-pill" id="movieScreenPill">Screen 1 • IMAX 3D</span>
+            </div>
+            <div class="movie-details-wrap">
+              <div class="movie-poster-mock" id="moviePosterMock">
+                <span class="poster-icon" id="moviePosterIcon">🛡️</span>
+                <span class="poster-title" id="moviePosterTitle">AVENGERS</span>
+                <span class="poster-sub" id="moviePosterSub">ENDGAME</span>
+              </div>
+              <div class="movie-meta">
+                <h3 class="movie-title" id="movieTitle">Avengers: Endgame</h3>
+                <div class="meta-row">
+                  <span class="meta-label">📅 Date:</span>
+                  <span class="meta-val">21 September 2026</span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">⏰ Show Time:</span>
+                  <span class="meta-val" id="movieShowTime">6:30 PM</span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">📍 Screen:</span>
+                  <span class="meta-val" id="movieScreenName">Screen 1 (Dolby Atmos)</span>
+                </div>
+                <div class="meta-row">
+                  <span class="meta-label">🎭 Genre & Run:</span>
+                  <span class="meta-val" id="movieGenreRun">Action • 3h 02m</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 3. SEAT SELECTION MATRIX -->
+          <section class="card seat-selection-card">
+            <div class="card-header">
+              <h3>💺 Select Seat for <span id="seatMovieName" class="highlight-inline">Avengers</span></h3>
+              <span class="badge-count" id="availableSeatBadge">18 Available</span>
+            </div>
+
+            <!-- Screen Graphic -->
+            <div class="screen-stage">
+              <div class="cinema-screen"></div>
+              <div class="screen-label">CINEMA SCREEN (EYES THIS WAY)</div>
+            </div>
+
+            <!-- Seat Grid (A1-D6) -->
+            <div class="seats-container" id="seatsGrid">
+              <!-- Dynamically generated via JS -->
+            </div>
+
+            <!-- Legend -->
+            <div class="seats-legend">
+              <div class="legend-item">
+                <span class="seat-sample seat-avail"></span>
+                <span>Available</span>
+              </div>
+              <div class="legend-item">
+                <span class="seat-sample seat-selected"></span>
+                <span>Selected</span>
+              </div>
+              <div class="legend-item">
+                <span class="seat-sample seat-queued"></span>
+                <span>In Queue</span>
+              </div>
+              <div class="legend-item">
+                <span class="seat-sample seat-booked"></span>
+                <span>Booked</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- 4. CUSTOMER BOOKING FORM -->
+          <!-- 4. CUSTOMER BOOKING FORM WITH PRIORITY QUEUE INTEGRATION -->
+          <section class="card booking-form-card">
+            <div class="card-header">
+              <h3>📝 Book Ticket (Queue &amp; Priority Queue)</h3>
+              <span class="badge-code">Integrated Python Queue</span>
+            </div>
+            <form id="bookingForm" onsubmit="return false;">
+
+              <!-- 1. TICKET TYPE SELECTION -->
+              <div class="form-group ticket-type-section">
+                <label class="form-label-bold">Ticket Type:</label>
+                <div class="ticket-type-toggle-grid">
+                  <label class="ticket-type-card active" id="labelTypeNormal">
+                    <input type="radio" name="ticketType" id="ticketTypeNormal" value="normal" checked>
+                    <span class="tt-icon">🎫</span>
+                    <div class="tt-info">
+                      <span class="tt-title">Normal Ticket</span>
+                      <span class="tt-sub">Standard FIFO Queue</span>
+                    </div>
+                  </label>
+                  <label class="ticket-type-card" id="labelTypePriority">
+                    <input type="radio" name="ticketType" id="ticketTypePriority" value="priority">
+                    <span class="tt-icon">⚡</span>
+                    <div class="tt-info">
+                      <span class="tt-title">Priority Ticket</span>
+                      <span class="tt-sub">VIP / Senior / Regular</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 2A. NORMAL TICKET CUSTOMER FIELD -->
+              <div class="form-group" id="normalCustomerFieldGroup">
+                <label for="customerNameInput">Customer / Student Name:</label>
+                <div class="input-with-quick">
+                  <input 
+                    type="text" 
+                    id="customerNameInput" 
+                    placeholder="e.g. Dishan, Lokesh, Rahul" 
+                    autocomplete="off"
+                  >
+                  <button type="button" class="btn-quick" id="btnRandomStudent" title="Quick sample student name">🎲 Random</button>
+                </div>
+              </div>
+
+              <!-- 2B. PRIORITY TICKET CUSTOMER DROPDOWN (DYNAMIC FROM PYTHON) -->
+              <div class="form-group" id="priorityCustomerFieldGroup" style="display: none;">
+                <div class="label-with-badge">
+                  <label for="priorityCustomerSelect">Priority Customer:</label>
+                  <span class="badge-pool-status" id="priorityPoolCountBadge">3 in Pool</span>
+                </div>
+                <select id="priorityCustomerSelect" class="pq-select">
+                  <!-- Dynamically populated from Python Priority Queue -->
+                </select>
+                <p class="form-help-text" id="priorityCustomerHelp">
+                  ⚡ Will jump ahead of normal customers according to priority rank (P1 &gt; P2 &gt; P3).
+                </p>
+              </div>
+
+              <!-- 3. SELECTED SEAT DISPLAY -->
+              <div class="form-group">
+                <label>Selected Seat:</label>
+                <div class="selected-seat-display" id="selectedSeatDisplay">
+                  <span class="placeholder-seat">Click an available seat in the grid</span>
+                </div>
+              </div>
+
+              <!-- 4. SUBMIT BUTTON -->
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="btnBookTicket">
+                  📥 BOOK NORMAL TICKET
+                </button>
+              </div>
+              <p class="form-help-text" id="bookingFlowHelp">
+                * Normal tickets enter the <strong>REAR</strong> (FIFO). Priority tickets are inserted <strong>ahead</strong> based on priority rank.
+              </p>
+            </form>
+          </section>
+
+          <!-- 4B. REGISTER PRIORITY CUSTOMER CARD -->
+          <section class="card register-priority-card">
+            <div class="card-header">
+              <h3>⚡ Register Priority Customer</h3>
+              <span class="badge-count" id="poolBadgeHeader">Priority Pool</span>
+            </div>
+            <p class="card-intro-text">
+              Add customers to the Priority Queue. Once registered, they appear in the <strong>"Priority Customer"</strong> dropdown above.
+            </p>
+            <div class="form-group">
+              <label for="regPqName">Customer Name:</label>
+              <div class="input-with-quick">
+                <input type="text" id="regPqName" placeholder="e.g. Benny, Wellesley, Venkat" autocomplete="off">
+                <button type="button" class="btn-quick" id="btnRandomPqName">🎲 Random</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="regPqPriority">Priority Type:</label>
+              <select id="regPqPriority" class="pq-select">
+                <option value="1">🔴 VIP — Priority 1 (Highest)</option>
+                <option value="2">🟠 Senior Citizen — Priority 2</option>
+                <option value="3" selected>🟡 Regular Priority — Priority 3</option>
+              </select>
+            </div>
+            <button type="button" class="btn btn-pq-add" id="btnRegisterPriority">
+              ⚡ ADD TO PRIORITY QUEUE
+            </button>
+          </section>
+
+        </aside>
+
+        <!-- RIGHT COLUMN: Queue Visualizer, Controls, Log -->
+        <main class="right-column">
+
+          <!-- 5. QUEUE VISUALIZATION (CORE REQUIREMENT) -->
+          <section class="card queue-visualizer-card">
+            <div class="visualizer-header">
+              <div>
+                <h3>📊 Live Queue for <span id="queueMovieTitle" class="highlight-inline">Avengers: Endgame</span></h3>
+                <p class="section-subtitle">Real-time memory representation of this screen's FIFO Queue</p>
+              </div>
+              <div class="pointers-summary">
+                <span class="pointer-pill pointer-front">FRONT ➔ queue[0]</span>
+                <span class="pointer-pill pointer-rear">REAR ➔ queue[length - 1]</span>
+              </div>
+            </div>
+
+            <!-- Notification Toast Box -->
+            <div class="action-feedback-banner" id="actionFeedbackBanner">
+              <span class="feedback-icon" id="feedbackIcon">ℹ️</span>
+              <span class="feedback-text" id="feedbackText">Initial demonstration data loaded.</span>
+            </div>
+
+            <!-- The Queue Visualizer Rail -->
+            <div class="queue-stage-container">
+              <div class="queue-pointer-markers">
+                <div class="marker front-marker" id="frontMarker">
+                  <span class="marker-arrow">▼</span>
+                  <span class="marker-tag">FRONT</span>
+                  <span class="marker-desc">First in line</span>
+                </div>
+                <div class="marker rear-marker" id="rearMarker">
+                  <span class="marker-arrow">▼</span>
+                  <span class="marker-tag">REAR</span>
+                  <span class="marker-desc">Latest arrival</span>
+                </div>
+              </div>
+
+              <div class="queue-rail" id="queueRail">
+                <!-- Dynamically rendered queue nodes appear here -->
+              </div>
+
+              <!-- Empty Queue Message -->
+              <div class="empty-queue-state" id="emptyQueueState" style="display: none;">
+                <div class="empty-icon">📭</div>
+                <h4>Queue is Empty for this Movie!</h4>
+                <p>No customers currently waiting in line. Select a seat and book to enqueue someone.</p>
+              </div>
+            </div>
+
+            <!-- 6. QUEUE CONTROLS -->
+            <div class="queue-controls-bar">
+              <button class="btn btn-control btn-confirm" id="btnConfirmTicket" title="Confirms ticket for FRONT customer (DEQUEUE)">
+                <span class="btn-icon">✅</span>
+                <span class="btn-text">CONFIRM TICKET (DEQUEUE)</span>
+              </button>
+
+              <button class="btn btn-control btn-enqueue" id="btnEnqueueModal" title="Adds customer to the REAR of queue">
+                <span class="btn-icon">📥</span>
+                <span class="btn-text">ENQUEUE CUSTOMER</span>
+              </button>
+
+              <button class="btn btn-control btn-peek" id="btnPeek" title="Inspects FRONT customer without removing">
+                <span class="btn-icon">👁️</span>
+                <span class="btn-text">PEEK FRONT</span>
+              </button>
+
+              <button class="btn btn-control btn-auto" id="btnAutoConfirm" title="Automatically confirms all waiting tickets one by one">
+                <span class="btn-icon">⚡</span>
+                <span class="btn-text">CONFIRM ALL (FIFO)</span>
+              </button>
+
+              <button class="btn btn-control btn-clear" id="btnClearQueue" title="Clears this movie's queue">
+                <span class="btn-icon">🗑️</span>
+                <span class="btn-text">CLEAR QUEUE</span>
+              </button>
+
+              <button class="btn btn-control btn-reset" id="btnResetDemo" title="Reset all 4 movies to demo state">
+                <span class="btn-icon">🔄</span>
+                <span class="btn-text">RESET DEMO</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- 8. ACTIVITY LOG / AUDIT TRAIL -->
+          <section class="card activity-log-card">
+            <div class="card-header">
+              <h3>📜 <span id="logMovieName">Avengers</span> Queue Operations Log</h3>
+              <div class="log-actions">
+                <span class="log-counter" id="logCountBadge">0 operations</span>
+                <button class="btn-text-only" id="btnClearLog">Clear Log</button>
+              </div>
+            </div>
+            <p class="log-subtitle">Step-by-step audit of Enqueue, Dequeue, Peek, and Confirmation events for this screen.</p>
+            <div class="activity-log-list" id="activityLogList">
+              <!-- Dynamic log entries -->
+            </div>
+          </section>
+
+          <!-- CODE SNIPPET REFERENCE FOR COLLEGE DEFENSE -->
+          <section class="card code-snippet-card">
+            <div class="card-header">
+              <h3>💻 Multi-Queue JavaScript Implementation</h3>
+              <span class="badge-code">Multi-Screen FIFO Model</span>
+            </div>
+            <div class="code-preview-block">
+              <pre><code><span class="cm">// Multi-Queue Dictionary (Screen isolation)</span>
+<span class="kd">const</span> cinemaHalls = {
+  <span class="kc">"endgame"</span>:      { queue: [Dishan, Lokesh, Ezekiel, Kevin], seats: ... },
+  <span class="kc">"interstellar"</span>: { queue: [Cooper, Murph, Brand], seats: ... },
+  <span class="kc">"titanic"</span>:      { queue: [Jack, Rose], seats: ... },
+  <span class="kc">"lalaland"</span>:     { queue: [Sebastian, Mia], seats: ... }
+};
+
+<span class="cm">// Enqueue to target screen: O(1)</span>
+cinemaHalls[movieId].queue.<span class="fn">push</span>(customer);
+
+<span class="cm">// Dequeue from target screen: O(n) in array, O(1) in linked queue</span>
+<span class="kd">const</span> served = cinemaHalls[movieId].queue.<span class="fn">shift</span>();</code></pre>
+            </div>
+          </section>
+
+        </main>
+
+      </div> <!-- End .dashboard-layout -->
+
+    </div> <!-- End #bookingViewContainer -->
+
+    <!-- ================= VIEW 2: CINEMA ANALYTICS & DATA VISUALIZATIONS ================= -->
+    <div id="analyticsViewContainer" class="view-panel" style="display: none;">
+
+      <!-- ANALYTICS HEADER & KPI CARDS -->
+      <section class="analytics-kpi-section">
+        <div class="kpi-card">
+          <div class="kpi-icon">🎟️</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Total Confirmed Tickets</span>
+            <span class="kpi-value" id="kpiTotalBooked">14</span>
+            <span class="kpi-sub">Across all 4 screens</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon">👥</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Total Waiting in Queues</span>
+            <span class="kpi-value" id="kpiTotalQueued">11</span>
+            <span class="kpi-sub">Pending ticket confirmation</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon">💺</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Multiplex Occupancy</span>
+            <span class="kpi-value highlight-kpi" id="kpiOccupancyRate">26%</span>
+            <span class="kpi-sub">25 of 96 total seats filled/queued</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon">🔥</div>
+          <div class="kpi-info">
+            <span class="kpi-label">Highest Demand Movie</span>
+            <span class="kpi-value" id="kpiTopMovie">Avengers: Endgame</span>
+            <span class="kpi-sub">Longest waiting queue</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- DATA VISUALIZATION CHARTS GRID -->
+      <section class="analytics-charts-grid">
+
+        <!-- CHART 1: Overall Capacity Donut Chart -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>🍩 Multiplex Capacity Distribution</h3>
+            <span class="chart-badge">Total 96 Seats</span>
+          </div>
+          <p class="chart-desc">Breakdown of Booked seats, In-Queue requests, and Available seats across all 4 screens.</p>
+          <div class="chart-wrapper">
+            <canvas id="multiplexDonutChart"></canvas>
+          </div>
+        </div>
+
+        <!-- CHART 2: Movie by Movie Booking Comparison (Grouped Bar Chart) -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>📊 Movie Seat Status Comparison</h3>
+            <span class="chart-badge">4 Cinema Screens</span>
+          </div>
+          <p class="chart-desc">Compares Booked, Queued, and Available seats for each of the 4 films.</p>
+          <div class="chart-wrapper">
+            <canvas id="moviesBarChart"></canvas>
+          </div>
+        </div>
+
+        <!-- CHART 3: Queue Waiting Lengths (Horizontal Bar Chart) -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>⏳ FIFO Queue Lengths by Screen</h3>
+            <span class="chart-badge">Queue Buffer</span>
+          </div>
+          <p class="chart-desc">Shows how many customers are waiting at each ticket counter.</p>
+          <div class="chart-wrapper">
+            <canvas id="queueLengthChart"></canvas>
+          </div>
+        </div>
+
+        <!-- CHART 4: Movie Occupancy Percentage Comparison -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>📈 Occupancy Rate per Movie (%)</h3>
+            <span class="chart-badge">Housefull Radar</span>
+          </div>
+          <p class="chart-desc">Percentage of seats either booked or currently reserved in queue.</p>
+          <div class="chart-wrapper">
+            <canvas id="occupancyBarChart"></canvas>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- MULTIPLEX STATUS SUMMARY TABLE -->
+      <section class="card table-card">
+        <div class="card-header">
+          <h3>📋 Multiplex Status Summary Table</h3>
+          <button class="btn-refresh-charts" id="btnRefreshCharts">🔄 Refresh Visualizations</button>
+        </div>
+        <div class="table-responsive">
+          <table class="analytics-table">
+            <thead>
+              <tr>
+                <th>Movie</th>
+                <th>Screen</th>
+                <th>Show Time</th>
+                <th>Queue Length</th>
+                <th>Booked</th>
+                <th>Available</th>
+                <th>Total Capacity</th>
+                <th>Occupancy %</th>
+                <th>Quick Action</th>
+              </tr>
+            </thead>
+            <tbody id="analyticsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div> <!-- End #analyticsViewContainer -->
+
+    <!-- ================= VIEW 3: PRIORITY BOOKING (PRIORITY QUEUE) ================= -->
+    <div id="priorityViewContainer" class="view-panel" style="display: none;">
+
+      <!-- COMPARISON BANNER: Normal Queue vs Priority Queue -->
+      <section class="pq-comparison-banner">
+        <div class="pq-compare-side pq-compare-normal">
+          <div class="pq-compare-icon">🔵</div>
+          <h3>Normal Queue</h3>
+          <div class="pq-compare-tag">FIFO Principle</div>
+          <p>First Come → First Served.<br>Order is based purely on <strong>arrival time</strong>. No customer can jump the line.</p>
+          <code>queue.shift() // removes from FRONT</code>
+        </div>
+        <div class="pq-compare-divider">
+          <span class="pq-vs-text">VS</span>
+        </div>
+        <div class="pq-compare-side pq-compare-priority">
+          <div class="pq-compare-icon">⚡</div>
+          <h3>Priority Queue</h3>
+          <div class="pq-compare-tag pq-tag-active">Priority-Based</div>
+          <p>Highest Priority → First Served.<br>A VIP who arrives <em>after</em> a Regular customer still gets served <strong>first</strong>.</p>
+          <code>sort by priority, then serve queue[0]</code>
+        </div>
+      </section>
+
+      <!-- MAIN PRIORITY QUEUE LAYOUT -->
+      <div class="pq-main-layout">
+
+        <!-- LEFT: Add to Priority Queue Form -->
+        <div class="pq-left-column">
+
+          <!-- Priority Legend -->
+          <section class="card pq-legend-card">
+            <div class="card-header">
+              <h3>🏷️ Priority Levels</h3>
+              <span class="badge-code">Lower number = Higher priority</span>
+            </div>
+            <div class="pq-legend-list">
+              <div class="pq-legend-row p1-row">
+                <span class="pq-dot p1-dot"></span>
+                <span class="pq-level-badge p1-badge">P1</span>
+                <span class="pq-type-label">🔴 VIP</span>
+                <span class="pq-legend-desc">Served absolutely first. No exceptions.</span>
+              </div>
+              <div class="pq-legend-row p2-row">
+                <span class="pq-dot p2-dot"></span>
+                <span class="pq-level-badge p2-badge">P2</span>
+                <span class="pq-type-label">🟠 Senior Citizen</span>
+                <span class="pq-legend-desc">Served after VIPs, before regular customers.</span>
+              </div>
+              <div class="pq-legend-row p3-row">
+                <span class="pq-dot p3-dot"></span>
+                <span class="pq-level-badge p3-badge">P3</span>
+                <span class="pq-type-label">🟡 Regular</span>
+                <span class="pq-legend-desc">Standard ticket-holder. Served in arrival order among P3s.</span>
+              </div>
+              <div class="pq-legend-row p4-row">
+                <span class="pq-dot p4-dot"></span>
+                <span class="pq-level-badge p4-badge">P4</span>
+                <span class="pq-type-label">🟢 Normal</span>
+                <span class="pq-legend-desc">Walk-in customer. Served last if higher priority customers exist.</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Add to Priority Queue Form -->
+          <section class="card pq-form-card">
+            <div class="card-header">
+              <h3>⚡ Add to Priority Queue</h3>
+            </div>
+            <div class="form-group">
+              <label for="pqCustomerName">Customer Name:</label>
+              <div class="input-with-quick">
+                <input type="text" id="pqCustomerName" placeholder="e.g. Benny, Arjun, Mrs. Kumar" autocomplete="off">
+                <button type="button" class="btn-quick" id="pqBtnRandom" title="Random sample name">🎲 Random</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="pqPrioritySelect">Customer Type / Priority:</label>
+              <select id="pqPrioritySelect" class="pq-select">
+                <option value="1" data-label="VIP" data-emoji="🔴">🔴 VIP — Priority 1 (Highest)</option>
+                <option value="2" data-label="Senior Citizen" data-emoji="🟠">🟠 Senior Citizen — Priority 2</option>
+                <option value="3" data-label="Regular" data-emoji="🟡" selected>🟡 Regular — Priority 3</option>
+                <option value="4" data-label="Normal" data-emoji="🟢">🟢 Normal — Priority 4 (Lowest)</option>
+              </select>
+            </div>
+            <button class="btn btn-pq-add" id="pqBtnAdd">
+              ⚡ ADD TO PRIORITY QUEUE
+            </button>
+            <p class="form-help-text" style="margin-top: 10px;">
+              * The queue auto-sorts by priority. A VIP added after a Regular will jump ahead automatically.
+            </p>
+          </section>
+
+          <!-- Priority Queue Controls -->
+          <section class="card pq-controls-card">
+            <div class="card-header">
+              <h3>🎮 Priority Queue Controls</h3>
+            </div>
+            <div class="pq-controls-grid">
+              <button class="btn btn-control btn-pq-serve" id="pqBtnServe">
+                <span class="btn-icon">🎟️</span>
+                <span class="btn-text">SERVE HIGHEST PRIORITY</span>
+              </button>
+              <button class="btn btn-control btn-pq-peek" id="pqBtnPeek">
+                <span class="btn-icon">👁️</span>
+                <span class="btn-text">VIEW NEXT (PEEK)</span>
+              </button>
+              <button class="btn btn-control btn-pq-clear" id="pqBtnClear">
+                <span class="btn-icon">🗑️</span>
+                <span class="btn-text">CLEAR PRIORITY QUEUE</span>
+              </button>
+              <button class="btn btn-control btn-pq-reset" id="pqBtnReset">
+                <span class="btn-icon">🔄</span>
+                <span class="btn-text">RESET DEMO DATA</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Priority Queue Code Reference -->
+          <section class="card code-snippet-card">
+            <div class="card-header">
+              <h3>💻 Priority Queue Implementation</h3>
+              <span class="badge-code">Sorted Array Approach</span>
+            </div>
+            <div class="code-preview-block">
+              <pre><code><span class="cm">// Priority Queue using sorted array</span>
+<span class="kd">let</span> pq = [];
+
+<span class="cm">// INSERT: Push then sort by priority number</span>
+<span class="kd">function</span> <span class="fn">pqEnqueue</span>(customer) {
+  pq.<span class="fn">push</span>(customer);
+  pq.<span class="fn">sort</span>((a, b) =&gt; a.priority - b.priority);
+}
+
+<span class="cm">// SERVE: Remove highest priority (front)</span>
+<span class="kd">function</span> <span class="fn">pqDequeue</span>() {
+  <span class="kd">return</span> pq.<span class="fn">shift</span>(); <span class="cm">// front = lowest number</span>
+}
+
+<span class="cm">// PEEK: Inspect without removing</span>
+<span class="kd">function</span> <span class="fn">pqPeek</span>() {
+  <span class="kd">return</span> pq[0];
+}</code></pre>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- RIGHT: Live Priority Queue Visualizer -->
+        <div class="pq-right-column">
+
+          <!-- Feedback Banner -->
+          <div class="action-feedback-banner" id="pqFeedbackBanner">
+            <span class="feedback-icon" id="pqFeedbackIcon">⚡</span>
+            <span class="feedback-text" id="pqFeedbackText">Priority Queue loaded with demo data. Benny (VIP) is at the FRONT.</span>
+          </div>
+
+          <!-- Live Priority Queue Visualizer -->
+          <section class="card pq-visualizer-card">
+            <div class="pq-viz-header">
+              <div>
+                <h3>⚡ Live Priority Queue</h3>
+                <p class="section-subtitle">Customers sorted by priority — highest priority always at FRONT</p>
+              </div>
+              <div class="pq-stats-pills">
+                <span class="pq-stat-pill">Total: <strong id="pqStatTotal">4</strong></span>
+                <span class="pq-stat-pill pq-pill-front">FRONT: <strong id="pqStatFront">Benny</strong></span>
+              </div>
+            </div>
+
+            <!-- Visual Pointer Labels -->
+            <div class="pq-pointer-bar">
+              <span class="pq-pointer-label pq-front-label">▼ FRONT — Highest Priority</span>
+              <span class="pq-pointer-label pq-rear-label">▲ REAR — Lowest Priority</span>
+            </div>
+
+            <!-- The vertical Priority Queue Rail -->
+            <div class="pq-rail-container" id="pqRailContainer">
+              <!-- Dynamically rendered -->
+            </div>
+
+            <!-- Empty state -->
+            <div class="empty-queue-state" id="pqEmptyState" style="display:none;">
+              <div class="empty-icon">📭</div>
+              <h4>Priority Queue is Empty!</h4>
+              <p>Use the form on the left to add customers. VIP customers will always jump to the front.</p>
+            </div>
+          </section>
+
+          <!-- Priority Queue Activity Log -->
+          <section class="card activity-log-card">
+            <div class="card-header">
+              <h3>📜 Priority Queue Activity Log</h3>
+              <div class="log-actions">
+                <span class="log-counter" id="pqLogCounter">0 operations</span>
+                <button class="btn-text-only" id="pqBtnClearLog">Clear</button>
+              </div>
+            </div>
+            <p class="log-subtitle">Shows how priority-based insertion differs from standard FIFO enqueue.</p>
+            <div class="activity-log-list" id="pqActivityLog">
+              <!-- Dynamic entries -->
+            </div>
+          </section>
+
+        </div>
+
+      </div>
+    </div>
+    <!-- End #priorityViewContainer -->
+
+    <!-- ================= TICKET CONFIRMATION PASS MODAL ================= -->
+    <div class="ticket-modal-overlay" id="ticketModalOverlay" style="display: none;">
+      <div class="ticket-modal-content">
+        <div class="ticket-stub-top">
+          <div class="ticket-brand">🎬 CINEMA TICKETS • BOARDING PASS</div>
+          <button class="btn-close-ticket" id="btnCloseTicketModal">✕</button>
+        </div>
+        <div class="ticket-body">
+          <div class="ticket-status-stamp">CONFIRMED ✅</div>
+          <h2 class="ticket-movie-title" id="modalTicketMovieTitle">Avengers: Endgame</h2>
+          <div class="ticket-info-grid">
+            <div class="ticket-info-item">
+              <span class="t-label">CUSTOMER / STUDENT</span>
+              <span class="t-val" id="ticketCustomerName">Dishan</span>
+            </div>
+            <div class="ticket-info-item">
+              <span class="t-label">CONFIRMED SEAT</span>
+              <span class="t-val seat-highlight" id="ticketSeat">A1</span>
+            </div>
+            <div class="ticket-info-item">
+              <span class="t-label">SHOW DATE & TIME</span>
+              <span class="t-val" id="modalTicketDateTime">21 Sept 2026 • 6:30 PM</span>
+            </div>
+            <div class="ticket-info-item">
+              <span class="t-label">HALL & SCREEN</span>
+              <span class="t-val" id="modalTicketScreen">Screen 1 (IMAX 3D)</span>
+            </div>
+          </div>
+          <div class="ticket-ds-note">
+            <span>🔄 Data Structure Operation:</span>
+            <strong>DEQUEUE (queue.shift())</strong>
+          </div>
+          <div class="ticket-barcode-mock">
+            <div class="barcode-lines">||| | |||| || | ||||| || ||| |||| | ||</div>
+            <div class="barcode-number" id="modalTicketBarcode">TKT-ENDGAME-FIFO-0042</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="app-footer">
+      <p>Data Structures Assignment: <strong>Multi-Queue Implementation (FIFO)</strong> & Data Visualizations</p>
+      <p class="credits">Featuring: Avengers: Endgame, Interstellar, Titanic, and La La Land • 4 Cinema Screens</p>
+    </footer>
+
+  </div> <!-- End .app-container -->
+
+  <script src="app.js"></script>
+</body>
+</html>
